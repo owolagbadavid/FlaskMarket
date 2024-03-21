@@ -38,6 +38,12 @@ class User(db.Model, UserMixin):
     def prettier_budget(self):
         return f"{self.budget:,}$"
 
+    def can_purchase(self, item_obj):
+        return self.budget >= item_obj.price
+
+    def can_sell(self, item_obj):
+        return item_obj in self.items
+
 
 class Item(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -51,3 +57,13 @@ class Item(db.Model):
 
     def __repr__(self) -> str:
         return f'Item {self.name}'
+
+    def buy(self, user: User):
+        self.owner = user.id
+        user.budget -= self.price
+        db.session.commit()
+
+    def sell(self, user: User):
+        self.owner = None
+        user.budget += self.price
+        db.session.commit()
